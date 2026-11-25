@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<title>Agonomia Development Atlas · 3D</title>
+<style>
+:root{
+  --bg:#05070b;--blue:#18a0ff;--blue2:#6fd0ff;--silver:#c9d3de;
+  --dim:#8793a2;--panel:#080e18eF;--line:#1c2b3f;--green:#65d6a4;
+  --amber:#e8bd68;--red:#e58b8b;--cyan:#74e4ff;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--silver);
+  font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+canvas{position:fixed;inset:0;display:block;touch-action:none}
+body:before{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;background:
+ radial-gradient(ellipse at 50% 48%,transparent 15%,#05070b44 58%,#020409d9 100%),
+ linear-gradient(115deg,#07142666,transparent 42%,#06101d55)}
+body:after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.12;
+ background-image:linear-gradient(#7fcaff12 1px,transparent 1px),linear-gradient(90deg,#7fcaff12 1px,transparent 1px);
+ background-size:72px 72px;mask-image:linear-gradient(to bottom,transparent,#000 20%,#000 80%,transparent)}
+#hud{position:fixed;top:env(safe-area-inset-top,0px);left:0;padding:22px 24px;pointer-events:none;z-index:2;
+ max-width:min(680px,calc(100vw - 32px))}
+.k{font:700 10px Arial;letter-spacing:.3em;color:var(--blue);text-transform:uppercase}
+.brand{display:flex;align-items:center;gap:16px}
+.brand svg{width:clamp(54px,8vw,92px);height:auto;flex:none;filter:drop-shadow(0 0 10px #18a0ff99)}
+h1{margin:0;font:700 clamp(26px,5.4vw,60px)/1 "Century Schoolbook","New Century Schoolbook",Georgia,serif;
+  letter-spacing:.04em;background:linear-gradient(180deg,#fff 0%,#e6ebf1 38%,#7e8b9a 54%,#d8dfe7 72%,#fff 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 6px #000)}
+.a{position:relative;display:inline-block}
+.a:after{content:'';position:absolute;left:50%;bottom:.1em;width:.27em;height:.22em;transform:translateX(-50%);
+  background:linear-gradient(180deg,#6fd0ff,#18a0ff);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.tag{font:italic 600 clamp(11px,1.6vw,16px) Arial;color:var(--silver);margin:10px 0 0}
+.tag .economics{color:#35aaff;text-shadow:0 0 5px #18a0ff,0 0 12px #18a0ff,0 0 22px #087ac2,0 0 34px #087ac288}
+.sub{font-size:12px;color:var(--dim);max-width:360px;line-height:1.5}
+#frame{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;filter:drop-shadow(0 0 5px #18a0ff)}
+#frame *{vector-effect:non-scaling-stroke}
+#stats{position:fixed;left:24px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:2;
+  display:flex;gap:22px;pointer-events:none;padding:13px 17px;background:linear-gradient(110deg,#081321cc,#08132155);
+  border:1px solid #2a4c6b88;border-radius:12px;backdrop-filter:blur(12px);box-shadow:0 12px 45px #0008}
+#stats div{border-left:2px solid var(--blue);padding-left:10px}
+#stats b{display:block;font:300 26px Arial;color:#fff;text-shadow:0 0 18px #4dbdff66}
+#stats small{font-size:9px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
+#stats div:nth-child(2){border-left-color:#9a8cff}
+#stats div:nth-child(3){border-left-color:var(--green)}
+#stats div:nth-child(3) b{color:var(--green)}
+.lbl{position:fixed;left:0;top:0;z-index:1;pointer-events:none;font:700 10px Arial;letter-spacing:.18em;
+  color:var(--blue2);text-transform:uppercase;white-space:nowrap;text-shadow:0 0 8px #18a0ff;transition:opacity .3s}
+.lbl i{display:block;font:400 9px Arial;letter-spacing:.06em;color:var(--silver);text-transform:none;
+  margin-top:2px;max-width:150px;white-space:normal}
+#panel{position:fixed;top:env(safe-area-inset-top,0px);right:0;bottom:env(safe-area-inset-bottom,0px);
+  width:min(490px,100%);z-index:3;background:linear-gradient(145deg,#0b1524f5,#060b13f2);backdrop-filter:blur(22px);
+  border-left:1px solid var(--blue);box-shadow:-10px 0 50px #18a0ff22;transform:translateX(105%);
+  transition:transform .5s cubic-bezier(.2,.8,.2,1);overflow:auto;padding:22px}
+#panel.on{transform:none}
+#panel h2{margin:6px 42px 8px 0;font:300 23px/1.15 Arial;color:#fff;letter-spacing:.03em}
+#panel p{font-size:12px;line-height:1.6;color:var(--dim);margin:0 0 8px}
+#x{position:absolute;top:14px;right:14px;background:none;border:1px solid var(--line);color:var(--silver);
+  width:32px;height:32px;border-radius:50%;cursor:pointer}
+#x:hover{border-color:var(--blue);color:var(--blue2)}
+.bar{height:3px;background:var(--line);margin:14px 0 18px}
+.bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--silver));
+  box-shadow:0 0 10px var(--blue);transition:width .5s}
+details{border:1px solid var(--line);border-radius:10px;margin:9px 0;background:#0c1320}
+summary{cursor:pointer;padding:12px;font-size:13px;list-style:none;display:flex;gap:10px;align-items:flex-start}
+summary b{color:var(--blue);font-size:10px;letter-spacing:.1em;padding-top:2px;min-width:34px}
+.t{display:flex;gap:9px;padding:8px 12px;font-size:12px;line-height:1.45;border-top:1px solid #121c2b;cursor:pointer}
+.t input{accent-color:var(--blue);margin-top:2px;flex:none}
+.t.d span{text-decoration:line-through;color:#687485}
+.dv{padding:9px 12px 12px;font-size:11px;color:var(--dim);border-top:1px solid #121c2b;line-height:1.5}
+.dv b{color:var(--blue2)}
+.stage-meta{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.pill{font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:5px 8px;border:1px solid var(--line);
+  border-radius:20px;color:var(--dim)}
+.pill.active{border-color:#18a0ff88;color:var(--blue2)}
+.pill.future{border-color:#8793a255;color:#aab4c0}
+.note{padding:11px 12px;border:1px solid #25415e;border-radius:9px;background:#0b1725;
+  font-size:11px;line-height:1.55;color:#aab8c8;margin:12px 0}
+.note strong{color:var(--blue2)}
+#hint{position:fixed;bottom:calc(22px + env(safe-area-inset-bottom,0px));right:24px;font-size:10px;
+  letter-spacing:.2em;color:var(--dim);text-transform:uppercase;z-index:2;pointer-events:none}
+#legend{position:fixed;right:24px;top:24px;z-index:2;pointer-events:none;display:flex;gap:12px;flex-wrap:wrap;
+  justify-content:flex-end;max-width:300px}
+.legend-item{font-size:9px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--blue);display:inline-block}
+.dot.done{background:var(--green)}.dot.future{background:#657181}
+@media(max-width:700px){
+  #stats{gap:10px;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:10px 12px}
+  #stats b{font-size:18px}#stats small{font-size:8px;letter-spacing:.1em}#hint{display:none}
+  #hud{padding:14px 16px}.brand{gap:10px}.brand svg{width:48px}
+  .tag{margin-top:6px}.sub{font-size:11px;max-width:290px}
+  .lbl i{display:none}#legend{top:auto;bottom:82px;right:12px;max-width:160px;gap:7px}
+  #panel{padding:18px 15px}
+}
+@media(max-height:620px) and (min-width:701px){
+  #hud{padding:14px 20px}.sub{max-width:290px}#stats{bottom:12px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg id="frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+ <g stroke="none" fill="#18a0ff1f">
+  <polygon points="0,0 0,9 6,9 15,0"/><polygon points="100,100 100,91 94,91 85,100"/>
+  <polygon points="100,0 100,12 88,0"/><polygon points="0,100 0,88 12,100"/>
+ </g>
+ <g fill="none" stroke="#18a0ff" stroke-width="2">
+  <polyline points="0,9 6,9 11,3 15,0"/><polyline points="0,14 8,14 14,6 19,0" stroke-width="1"/>
+  <polyline points="100,91 94,91 89,97 85,100"/><polyline points="100,86 92,86 86,94 81,100" stroke-width="1"/>
+  <polyline points="100,12 88,0"/><polyline points="100,7 93,0" stroke-width="1"/>
+  <polyline points="0,88 12,100"/><polyline points="0,93 7,100" stroke-width="1"/>
+ </g>
+</svg>
+
+<div id="hud">
+ <div class="brand">
+  <svg viewBox="0 0 120 124" aria-hidden="true">
+   <defs><linearGradient id="sv" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#9aa7b6"/><stop offset="1" stop-color="#e9eef3"/>
+   </linearGradient></defs>
+   <path d="M60 6L114 94H88L60 50 32 94H6Z" fill="url(#sv)"/>
+   <path d="M60 58L75 84H45Z" fill="#18a0ff"/><path d="M38 100L60 120 82 100Z" fill="url(#sv)"/>
+   <ellipse cx="60" cy="70" rx="58" ry="17" transform="rotate(-22 60 70)" fill="none"
+    stroke="#18a0ff" stroke-width="5" stroke-dasharray="250 60"/>
+  </svg>
+  <div><h1><span class="a">A</span>GONOMI<span class="a">A</span></h1>
+   <div class="tag">Beat the system. Earn from its <span class="economics">Economics</span>,</div>
+  </div>
+ </div>
+ <div class="k" style="margin:16px 0 6px">Development Atlas · System Progression Tracker</div>
+ <div class="sub">Agonomia's eight-stage engineering roadmap, organised beneath its three strategic pillars: Synthetic Market Architecture, Incentive Mechanisms and User Acquisition. Select a node to inspect deliverables and verify completed work.</div>
+</div>
+
+<div id="legend">
+ <span class="legend-item"><i class="dot done"></i>Verified task</span>
+ <span class="legend-item"><i class="dot"></i>Active stage</span>
+ <span class="legend-item"><i class="dot future"></i>Future stage</span>
+</div>
+<div id="stats">
+ <div><b id="pct">0%</b><small>Active stage verified</small></div>
+ <div><b id="cnt">0/0</b><small>Active stage tasks</small></div>
+ <div><b id="overallPct">0%</b><small>Overall roadmap</small></div>
+</div>
+<div id="hint">Drag · Scroll · Select node · Keys 1–8</div>
+
+<aside id="panel" aria-label="Development stage details">
+ <button id="x" aria-label="Close">✕</button>
+ <div id="pc"></div>
+</aside>
+
+<script>
+/* Load the same Three.js build from fallback CDNs if the first host is unavailable. */
+window.agonomiaThreeReady = new Promise((resolve, reject) => {
+  const sources = [
+    "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
+    "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js",
+    "https://unpkg.com/three@0.128.0/build/three.min.js"
+  ];
+  let index = 0;
+  function attempt(){
+    if (window.THREE) { resolve(window.THREE); return; }
+    if (index >= sources.length) { reject(new Error("Three.js could not be loaded from the available CDNs.")); return; }
+    const script = document.createElement("script");
+    script.src = sources[index++];
+    script.onload = () => window.THREE ? resolve(window.THREE) : attempt();
+    script.onerror = attempt;
+    document.head.appendChild(script);
+  }
+  attempt();
+});
+</script>
+<script>
+window.agonomiaThreeReady.then(() => {
+
+"use strict";
+
+/*
+  AGONOMIA DEVELOPMENT ATLAS
+  Progress is evidence-driven and maintained in the tracker source by the project maintainer.
+  Checkboxes are read-only indicators: users cannot mark work complete by clicking.
+  A task is checked only when its deliverable has been completed and verified.
+*/
+
+const ACTIVE_STAGE = 0; // Stage 1 is the current development stage.
+
+/*
+  Task shape:
+  [taskId, taskTitle, checklistItems, deliverable]
+  Only the five repository/tracker facts confirmed in the project history are
+  pre-verified. All other tasks remain unchecked until their deliverables
+  have been reviewed and evidence has been recorded.
+*/
+const S = [
+{
+ n:"System Architecture & Requirements", c:0x18a0ff,
+ g:"Establish the authoritative definition, boundaries, requirements and architecture of Agonomia before detailed implementation.",
+ d:"CURRENT ACTIVE STAGE",
+ status:"active",
+ s:[
+  ["1.1","Product definition and system intent",[
+   "Write the authoritative Agonomia system purpose and intended outcomes",
+   "Record what Agonomia is not: conventional exchange, brokerage or copy-trading platform",
+   "Define independent algorithmic operators as the primary participants",
+   "Define independent computational systems as participants competing for opportunities and profit",
+   "Document the three strategic pillars and distinguish them from technical implementation stages",
+   "Define measurable product success criteria"
+  ],"Approved product/system brief"],
+  ["1.2","Actors, trust boundaries and use cases",[
+   "Identify operators, developers, algorithm owners, administrators and infrastructure roles",
+   "Document operator onboarding, algorithm development, validation and deployment use cases",
+   "Identify privileged actions, trust boundaries and sensitive system interfaces",
+   "Document abuse cases, misuse scenarios and operational failure cases",
+   "Create actor map and use-case catalogue"
+  ],"Actor map, use-case catalogue and trust-boundary diagram"],
+  ["1.3","System context and subsystem decomposition",[
+   "Create system context diagram and external-system map",
+   "Document the nine logical backend components and their responsibilities",
+   "Map the three strategic pillars to the relevant technical systems and development work",
+   "Document the Economic Engine versus Synthetic Market Engine boundary",
+   "Document the Earnings Engine, OEP and Capacity Governor relationship",
+   "Map dependencies between economic, market, execution, compute, API and settlement components",
+   "Define subsystem data ownership and initial interface boundaries"
+  ],"System context diagram and subsystem architecture"],
+  ["1.4","Requirements and quality attributes",[
+   "Write uniquely identified functional requirements for each subsystem",
+   "Define availability, latency, throughput and recovery objectives",
+   "Define security, privacy, auditability and data-retention requirements",
+   "Define performance and scalability requirements for operator execution",
+   "Assign acceptance criteria and verification methods to each requirement"
+  ],"Traceable functional and non-functional requirements register"],
+  ["1.5","Core workflows and data ownership",[
+   "Document registration, onboarding and operator identity workflow",
+   "Document algorithm development, validation, staging and deployment workflow",
+   "Document synthetic market interaction and execution lifecycle",
+   "Document performance evaluation, earnings calculation and approval workflow",
+   "Document OEP funding, Capacity Governor and OIKX settlement workflow",
+   "Define authoritative source of truth for each core data entity"
+  ],"Workflow diagrams and data ownership map"],
+  ["1.6","Architecture decisions and review",[
+   "Create Architecture Decision Record (ADR) template",
+   "Record the agreed OEP and Capacity Governor responsibilities and their relationship",
+   "Record OEP funding sources and the distinction between deposits and realized losses",
+   "Record that OEP determines earning capacity and Capacity Governor translates it into permissible synthetic market activity",
+   "Review CORE_ARCHITECTURE.md for conceptual and technical accuracy",
+   "Create system context and subsystem relationship diagrams",
+   "Approve and version the initial architecture baseline"
+  ],"Approved architecture baseline and ADR register"],
+  ["1.7","Economic architecture requirements",[
+   "Document OIKX as Agonomia's sole primary ecosystem currency",
+   "Document all six established OEP funding-source categories",
+   "Separate available funding, reserves, liabilities, deposits and realized settled losses",
+   "Document the seven-figure compounding objective as a modelling requirement, not a promise",
+   "Define the denomination and measurement period for the seven-figure objective",
+   "Define required feasibility, liquidity, concentration and stress-test scenarios"
+  ],"Economic architecture requirements and modelling acceptance criteria"],
+  ["1.8","Repository baseline and development evidence",[
+   "Create the Agonomia Git repository and establish the main branch",
+   "Update CORE_ARCHITECTURE.md to architecture version 0.3",
+   "Commit the architecture update as 19fb863",
+   "Push commit 19fb863 to origin/main",
+   "Install the standalone Development Atlas in the local repository and verify that its node interaction works",
+   "Define a repeatable process for recording task evidence and keeping the tracker aligned with repository changes",
+   "Publish the tracker through a verified public hosting workflow, if public access is required"
+  ],"Repository baseline evidence: commit 19fb863 on main; local tracker at tracker/index.html. Public hosting is not yet configured or verified."]
+ ]
+},
+{
+ n:"Mathematical & Economic Engine", c:0xc9d3de,
+ g:"Formalize the economic framework, state variables, mathematical relationships, constraints and testable behaviour that govern Agonomia's synthetic economy.",
+ d:"Depends on Stage 1 architecture and requirements baseline",
+ status:"future",
+ s:[
+  ["2.1","Economic model and state definition",[
+   "Specify economic entities, agents, resources and state variables",
+   "Define relationships between market state, participant activity and economic constraints",
+   "Separate internally generated synthetic variables from external reference data",
+   "Define units, domains, ranges, precision and valid state boundaries",
+   "Document assumptions, invariants and model limitations"
+  ],"Economic model specification and state glossary"],
+  ["2.2","Mathematical foundations",[
+   "Specify state-transition equations and update rules",
+   "Define deterministic and stochastic model components",
+   "Define numerical precision, rounding and reproducibility rules",
+   "Create hand-checkable worked examples",
+   "Identify mathematical edge cases and undefined states"
+  ],"Mathematical specification with worked examples"],
+  ["2.3","Price formation and market behaviour foundations",[
+   "Research and compare candidate internally generated price-formation mechanisms",
+   "Specify candidate volatility, depth, spread and liquidity behaviour",
+   "Define market regimes and transition conditions",
+   "Model participant interaction and endogenous market feedback",
+   "Test for pathological states, unintended arbitrage loops and unstable feedback"
+  ],"Price-formation and market-behaviour model"],
+  ["2.4","Economic constraints and stability",[
+   "Define conservation rules and accounting invariants",
+   "Define bounds, circuit breakers and invalid-state handling",
+   "Model low-activity, normal-activity and high-activity conditions",
+   "Perform sensitivity analysis on key economic parameters",
+   "Test stability under shocks, concentration and adversarial behaviour"
+  ],"Constraint catalogue and stability analysis"],
+  ["2.5","Simulation and calibration harness",[
+   "Build a reference implementation of the approved mathematical model",
+   "Generate reproducible scenarios using controlled random seeds",
+   "Compare expected results with observed simulation outputs",
+   "Record calibration methods, datasets and model limitations",
+   "Build automated regression tests for mathematical invariants"
+  ],"Runnable simulation harness and calibration report"],
+  ["2.6","Operator opportunity and compounding feasibility",[
+   "Model opportunity availability across different market regimes",
+   "Model strategy capacity, competition and edge decay",
+   "Test exceptional-operator earnings under conservative, base and stress scenarios",
+   "Model compounding after fees, execution costs and applicable constraints",
+   "Distinguish nominal OIKX value from realizable economic value and liquidity",
+   "Test whether seven-figure outcomes are supportable without assuming guaranteed returns"
+  ],"Operator economics feasibility model and stress-test report"],
+  ["2.7","Economic model acceptance",[
+   "Define model acceptance tests and quantitative thresholds",
+   "Review assumptions, sensitivity results and unresolved questions",
+   "Document rejected alternatives and reasons",
+   "Obtain review and sign-off for a versioned model"
+  ],"Versioned, reviewed and testable economic model"]
+ ]
+},
+{
+ n:"OEP & Capacity Governor", c:0x9a8cff,
+ g:"Account for eligible operator earnings transparently through OEP, while the Capacity Governor translates available earning capacity into permissible synthetic market activity and opportunity/earning exposure.",
+ d:"Depends on Stage 2 economic model; required before real-value settlement",
+ status:"future",
+ s:[
+  ["3.1","OEP policy and funding sources",[
+   "Document OIKX tokenomics as a potential funding source",
+   "Document infrastructure revenue and applicable timing/evidence",
+   "Document transaction-fee funding and accounting treatment",
+   "Document enterprise agreements and technology-licensing contributions",
+   "Define conditions for recognizing realized and settled trader losses",
+   "Explicitly distinguish deposits from realized losses",
+   "Classify each source by availability, restrictions, timing and legal/operational status"
+  ],"OEP funding policy and source classification"],
+  ["3.2","OEP ledger and accounting",[
+   "Define ledger accounts, balances and event types",
+   "Separate available, reserved, calculated, approved and paid earnings",
+   "Separately record deposits, custodial liabilities and unsettled balances",
+   "Define funding-source reconciliation and accounting controls",
+   "Specify immutable audit fields, corrections and reversals"
+  ],"OEP ledger schema and accounting rules"],
+  ["3.3","Earnings Engine specification",[
+   "Define eligible operator actions and earning events",
+   "Specify earnings inputs, formulas, attribution and formula versioning",
+   "Define eligibility conditions, exclusions, caps and correction rules",
+   "Define dispute handling and calculation reproducibility",
+   "Create deterministic test vectors and worked examples"
+  ],"Earnings calculation specification and test vectors"],
+  ["3.4","Capacity Governor and engine interface",[
+   "Define authoritative available-funding and liability signals",
+   "Define aggregate obligation limits, reserves and safety buffers",
+   "Specify how capacity constraints are communicated to relevant engines",
+   "Define stale-data, delayed-settlement and unavailable-funding behaviour",
+   "Test depleted, replenished and stressed funding scenarios",
+   "Ensure Capacity Governor translates OEP earning capacity into permissible synthetic market activity and opportunity/earning exposure"
+  ],"Capacity Governor specification and interface contract"],
+  ["3.5","Payment and reconciliation",[
+   "Define calculated, reviewed, approved, payable and paid states",
+   "Specify settlement batching, idempotency and duplicate prevention",
+   "Define failed-payment recovery and reconciliation procedures",
+   "Define operator statements and transaction evidence",
+   "Handle insufficient funding, disputes and settlement reversals"
+  ],"Payment workflow and reconciliation rules"],
+  ["3.6","OEP risk, governance and acceptance",[
+   "Model funding shortfall and correlated-earnings scenarios",
+   "Model concentration risk from a small number of exceptional operators",
+   "Define permissions and controls for funding-source changes",
+   "Create OEP accounting invariants and audit tests",
+   "Establish counterparty, custody and legal responsibilities before real-value settlement"
+  ],"OEP risk review, governance policy and acceptance suite"]
+ ]
+},
+{
+ n:"Synthetic Market Engine", c:0x4fd1ff,
+ g:"Generate and operate internally coherent synthetic markets using the approved economic framework and explicit market-generation rules.",
+ d:"Depends on Stage 2 model and Stage 3 Capacity Governor interface",
+ status:"future",
+ s:[
+  ["4.1","Market specification and lifecycle",[
+   "Define market entities, identifiers and lifecycle states",
+   "Specify creation, activation, pause, retirement and archival",
+   "Define market parameters, permitted ranges and configuration versioning",
+   "Specify the relationship between individual markets and the synthetic economy"
+  ],"Synthetic market specification"],
+  ["4.2","Market state and event architecture",[
+   "Define market state representation and update sequence",
+   "Specify event types, ordering, timestamps and replay requirements",
+   "Define deterministic processing rules where applicable",
+   "Specify event persistence, snapshots and recovery"
+  ],"Market state and event architecture"],
+  ["4.3","Market dynamics and participant interaction",[
+   "Implement approved price-formation and market-dynamics rules",
+   "Define participant actions and their permitted effects",
+   "Model liquidity, depth, spread, volatility and regime changes",
+   "Test market response to different operator strategies and activity levels"
+  ],"Market dynamics implementation and behaviour tests"],
+  ["4.4","Economic constraints and governor integration",[
+   "Define the market engine's input contract with the Economic Engine",
+   "Define its capacity/governance interface without exposing private operator outcomes",
+   "Specify safe behaviour when capacity signals are stale or unavailable",
+   "Test market stability under constrained operating conditions"
+  ],"Economic Engine and Capacity Governor integration contract"],
+  ["4.5","Market data and operator interfaces",[
+   "Define market-data schemas and versioning",
+   "Define read and interaction APIs for operators",
+   "Specify rate limits, timestamps and data consistency",
+   "Define historical data, replay and audit access"
+  ],"Market data and operator API specification"],
+  ["4.6","Market validation and acceptance",[
+   "Build reproducible market scenarios",
+   "Test invariants and edge cases",
+   "Evaluate opportunity quality and strategy saturation",
+   "Run adversarial and stress simulations",
+   "Approve a versioned market-engine specification"
+  ],"Synthetic Market Engine validation report"]
+ ]
+},
+{
+ n:"Execution & API Infrastructure", c:0x70c9a8,
+ g:"Provide governed, observable and secure connectivity through which independent operator algorithms access Agonomia.",
+ d:"Depends on architecture, market interfaces and execution requirements",
+ status:"future",
+ s:[
+  ["5.1","Operator identity and access",[
+   "Define operator, account and algorithm identities",
+   "Specify authentication, authorization and scoped credentials",
+   "Define MFA and account recovery requirements",
+   "Specify API-key lifecycle, rotation and revocation"
+  ],"Identity and access-control specification"],
+  ["5.2","API gateway and contracts",[
+   "Define operator-facing API boundaries and versioning",
+   "Specify request validation, rate limits and quotas",
+   "Define error formats, retry rules and idempotency",
+   "Document SDK and API authentication requirements"
+  ],"API gateway specification and interface contracts"],
+  ["5.3","Execution gateway and lifecycle",[
+   "Define algorithm registration and deployment lifecycle",
+   "Specify order/action submission and acknowledgement semantics",
+   "Define deterministic processing and event timestamps where applicable",
+   "Specify kill switches, cancellation and safe shutdown"
+  ],"Execution gateway and lifecycle specification"],
+  ["5.4","Monitoring and operator observability",[
+   "Define algorithm health and execution metrics",
+   "Specify logs, traces, alerts and audit events",
+   "Define operator-facing performance and resource views",
+   "Separate operational telemetry from authoritative earnings records"
+  ],"Execution observability specification"],
+  ["5.5","External and hosted execution parity",[
+   "Define rules shared by hosted and externally operated algorithms",
+   "Specify common gateway, permissions, rate limits and audit treatment",
+   "Define fair processing and timing requirements",
+   "Test disconnect, reconnect and failure behaviour"
+  ],"Execution parity and connectivity tests"]
+ ]
+},
+{
+ n:"VM & Computing Infrastructure", c:0xe5ad68,
+ g:"Provide isolated, resource-governed computational environments for operator development and algorithm execution.",
+ d:"Depends on execution requirements and security threat model",
+ status:"future",
+ s:[
+  ["6.1","Runtime and isolation architecture",[
+   "Define supported algorithm runtimes and packaging format",
+   "Evaluate microVM and container isolation options",
+   "Define tenant and algorithm isolation boundaries",
+   "Specify default-deny network and filesystem policies"
+  ],"Runtime and isolation architecture"],
+  ["6.2","Resource governance and scheduling",[
+   "Define CPU, memory, storage and network quotas",
+   "Specify scheduling, concurrency and capacity allocation",
+   "Define resource metering and abuse prevention",
+   "Specify overload, suspension and termination behaviour"
+  ],"Compute scheduler and resource-governance specification"],
+  ["6.3","Workspace and deployment lifecycle",[
+   "Define development workspace lifecycle",
+   "Specify build, scan, package and deployment pipeline",
+   "Define separation between workspace and persistent execution",
+   "Specify artifact signing, versioning and rollback"
+  ],"Workspace and deployment pipeline"],
+  ["6.4","Operational reliability",[
+   "Define health checks, restart and recovery behaviour",
+   "Specify snapshots, persistence and backup requirements",
+   "Test workspace disconnect while deployed algorithms continue",
+   "Define infrastructure monitoring and incident response"
+  ],"Compute reliability and recovery test suite"]
+ ]
+},
+{
+ n:"OIKX & Settlement Infrastructure", c:0xb6c5d8,
+ g:"Integrate OIKX for approved economic settlement while preserving accounting integrity, custody boundaries and liquidity transparency.",
+ d:"Depends on tokenomics decisions, OEP accounting and legal/security review",
+ status:"future",
+ s:[
+  ["7.1","Token and chain decisions",[
+   "Confirm blockchain network and token standard",
+   "Finalize token supply, allocation and vesting policy",
+   "Define mint authority, revocation and administrative controls",
+   "Review token name, ticker and legal availability"
+  ],"Approved OIKX token and chain specification"],
+  ["7.2","Wallet and custody architecture",[
+   "Define treasury, settlement and operator wallet roles",
+   "Define key management, signing and recovery controls",
+   "Specify custody boundaries and segregation of duties",
+   "Define wallet monitoring and transaction approval policies"
+  ],"Wallet and custody security specification"],
+  ["7.3","Earnings settlement integration",[
+   "Map approved OEP obligations to settlement instructions",
+   "Define transaction construction, signing and submission",
+   "Specify confirmations, finality and failure handling",
+   "Prevent duplicate settlement and reconcile chain records"
+  ],"OIKX settlement integration specification"],
+  ["7.4","Liquidity and realization",[
+   "Distinguish token balances from realizable market liquidity",
+   "Model settlement liquidity and withdrawal demand",
+   "Define transparent operator disclosures about realization conditions",
+   "Stress-test liquidity concentration and market disruption"
+  ],"Settlement liquidity and realization analysis"]
+ ]
+},
+{
+ n:"Security, Testing & Deployment", c:0xe58b8b,
+ g:"Validate system security, economic integrity, operational readiness and deployment safety before real-value operation.",
+ d:"Cross-cutting throughout development; production readiness follows prior stages",
+ status:"future",
+ s:[
+  ["8.1","Security architecture and threat modelling",[
+   "Create system-wide threat model and trust-boundary review",
+   "Define secrets, identity, tenant-isolation and network controls",
+   "Review privileged operations and administrative access",
+   "Define security logging and incident response"
+  ],"Threat model and security control matrix"],
+  ["8.2","Component and integration testing",[
+   "Define unit, property-based and integration test strategy",
+   "Test subsystem contracts and failure handling",
+   "Test accounting invariants and deterministic calculations",
+   "Run end-to-end operator and settlement workflow tests"
+  ],"Automated test suite and integration report"],
+  ["8.3","Economic and adversarial stress testing",[
+   "Stress-test synthetic market stability and edge cases",
+   "Stress-test OEP liabilities, funding and aggregate obligations",
+   "Test exceptional-operator compounding scenarios and concentration",
+   "Test OIKX settlement and liquidity under adverse conditions",
+   "Document model limits and failure thresholds"
+  ],"Economic stress-test and adversarial validation report"],
+  ["8.4","Deployment and operational readiness",[
+   "Define environments, release gates and rollback procedures",
+   "Define backup, disaster recovery and incident procedures",
+   "Complete security review and remediation",
+   "Complete legal and compliance review for intended jurisdictions",
+   "Approve production readiness only after acceptance criteria are met"
+  ],"Deployment readiness and release approval"]
+ ]
+}
+];
+
+const validTaskIds = new Set();
+S.forEach(stage => stage.s.forEach(item =>
+  item[2].forEach((_, k) => validTaskIds.add(item[0] + "-" + k))
+));
+
+let done = {
+  "1.8-0": true,
+  "1.8-1": true,
+  "1.8-2": true,
+  "1.8-3": true,
+  "1.8-4": true
+};
+
+
+const W = window.innerWidth, H = window.innerHeight;
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({antialias:true, alpha:false, powerPreference:"high-performance"});
+} catch (error) {
+  document.body.innerHTML = '<main style="max-width:680px;margin:12vh auto;padding:28px;color:#dce8f5;font:16px/1.6 Arial"><p style="color:#18a0ff;letter-spacing:.2em">AGONOMIA · DEVELOPMENT ATLAS</p><h1>3D rendering is unavailable</h1><p>This browser or device could not initialize WebGL. Enable hardware acceleration or open the Atlas in a browser with WebGL support. </p></main>';
+  throw error;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+renderer.setSize(W,H);
+renderer.setClearColor(0x05070b);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.18;
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x05070b,.014);
+const camera = new THREE.PerspectiveCamera(48,W/H,.1,240);
+camera.position.set(0,1.8,18);
+scene.add(new THREE.HemisphereLight(0x8abfff,0x07101e,1.15));
+const coreLight = new THREE.PointLight(0x18a0ff,4.2,70);
+coreLight.position.set(0,0,0); scene.add(coreLight);
+const rimLight = new THREE.PointLight(0x6f72ff,2.3,50);
+rimLight.position.set(-10,5,-8); scene.add(rimLight);
+const directional = new THREE.DirectionalLight(0xddeeff,1.7);
+directional.position.set(8,12,10); scene.add(directional);
+
+const starPositions = new Float32Array(2400*3);
+for(let i=0;i<starPositions.length;i++) starPositions[i]=(Math.random()-.5)*120;
+const starGeometry = new THREE.BufferGeometry();
+starGeometry.setAttribute("position",new THREE.BufferAttribute(starPositions,3));
+const stars = new THREE.Points(starGeometry,
+  new THREE.PointsMaterial({color:0x8bdcff,size:.105,transparent:true,opacity:.62, sizeAttenuation:true}));
+scene.add(stars);
+
+// A second, finer particle field gives the environment depth without competing with the roadmap.
+const dustPositions = new Float32Array(1500*3);
+for(let i=0;i<dustPositions.length;i++) dustPositions[i]=(Math.random()-.5)*55;
+const dustGeometry = new THREE.BufferGeometry();
+dustGeometry.setAttribute("position",new THREE.BufferAttribute(dustPositions,3));
+const dust = new THREE.Points(dustGeometry,new THREE.PointsMaterial({
+  color:0x3f9dce,size:.035,transparent:true,opacity:.5
+}));
+scene.add(dust);
+
+const grid = new THREE.GridHelper(90,72,0x1b6b9d,0x0a1d31);
+grid.position.y=-7.5; grid.material.transparent=true; grid.material.opacity=.22; scene.add(grid);
+
+const group = new THREE.Group(); scene.add(group);
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.62,2),
+  new THREE.MeshPhysicalMaterial({color:0x123c5b,metalness:.72,roughness:.22,
+    emissive:0x063b68,emissiveIntensity:.75,wireframe:true,transparent:true,opacity:.8}));
+group.add(core);
+const coreShell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.28,1),
+  new THREE.MeshPhysicalMaterial({color:0x1b6b9d,metalness:.85,roughness:.16,
+    transmission:.18,transparent:true,opacity:.32,emissive:0x073e70,emissiveIntensity:.7}));
+group.add(coreShell);
+const coreInner = new THREE.Mesh(new THREE.OctahedronGeometry(.78,1),
+  new THREE.MeshPhysicalMaterial({color:0xd6f4ff,metalness:.8,roughness:.16,
+    emissive:0x168bd1,emissiveIntensity:1.5}));
+group.add(coreInner);
+const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(2.45,48,48),
+  new THREE.MeshBasicMaterial({color:0x087ac2,transparent:true,opacity:.045,side:THREE.BackSide}));
+group.add(coreHalo);
+const rings=[];
+for(let i=0;i<5;i++){
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(2.15+i*.32,.012+(i%2)*.006,8,160),
+    new THREE.MeshBasicMaterial({color:[0x18a0ff,0x9bdfff,0x6f72ff,0x4fd1ff,0xc9d3de][i],
+      transparent:true,opacity:.32+(i%2)*.12}));
+  ring.rotation.x=Math.PI/2+i*.39; ring.rotation.y=i*.61; group.add(ring); rings.push(ring);
+}
+const coreTicks = new THREE.Group();
+for(let i=0;i<48;i++){
+  const a=i/48*Math.PI*2;
+  const tick=new THREE.Mesh(new THREE.BoxGeometry(.025,.12,.025),
+    new THREE.MeshBasicMaterial({color:i%4===0?0x74e4ff:0x42728f,transparent:true,opacity:.7}));
+  tick.position.set(Math.cos(a)*2.72,Math.sin(a)*2.72,0);
+  tick.rotation.z=a-Math.PI/2; coreTicks.add(tick);
+}
+group.add(coreTicks);
+
+const nodes=[], points=[];
+S.forEach((stage,i)=>{
+  const angle=i*.85, radius=7, y=(i-3.5)*1.3;
+  const materialColor=stage.c;
+  // Simple, consistent metallic sphere for every roadmap stage.
+  const material = new THREE.MeshPhysicalMaterial({
+    color: 0xc9d3de,
+    metalness: 0.72,
+    roughness: 0.3,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.28,
+    emissive: materialColor,
+    emissiveIntensity: stage.status === "active" ? 0.42 : 0.12
+  });
+
+  const node = new THREE.Mesh(
+    new THREE.SphereGeometry(0.62, 32, 32),
+    material
+  );
+
+  node.position.set(
+    Math.cos(angle) * radius,
+    y,
+    Math.sin(angle) * radius
+  );
+
+  node.userData.index = i;
+
+  // Restrained progress ring, visible only when progress exists.
+  const progressRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.82, 0.845, 64),
+    new THREE.MeshBasicMaterial({
+      color: materialColor,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide
+    })
+  );
+
+  node.add(progressRing);
+  node.userData.progressRing = progressRing;
+
+  group.add(node);
+  nodes.push(node);
+  points.push(node.position.clone());
+
+  const label=document.createElement("div");
+  label.className="lbl";
+  label.innerHTML=(i+1)+" · "+stage.n.split(" ")[0]+"<i>"+(stage.status==="active"?"CURRENT STAGE":stage.n)+"</i>";
+  document.body.appendChild(label); node.userData.label=label;
+});
+const curve=new THREE.CatmullRomCurve3(points);
+group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(200)),
+  new THREE.LineBasicMaterial({color:0x18a0ff,transparent:true,opacity:.5})));
+nodes.forEach((node,index)=>{
+  const spoke = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),node.position]),
+    new THREE.LineBasicMaterial({color:S[index].c,transparent:true,opacity:.18}));
+  group.add(spoke);
+});
+const pulse=new THREE.Mesh(new THREE.SphereGeometry(.105,16,16),
+  new THREE.MeshBasicMaterial({color:0xdaf7ff}));
+group.add(pulse);
+const pulseGlow=new THREE.PointLight(0x18a0ff,1.5,7);
+group.add(pulseGlow);
+const orbitParticles=[];
+for(let i=0;i<8;i++){
+  const particle=new THREE.Mesh(new THREE.SphereGeometry(.045,10,10),
+    new THREE.MeshBasicMaterial({color:i%2?0x9bdfff:0x18a0ff}));
+  group.add(particle); orbitParticles.push(particle);
+}
+
+let rotY=0,rotX=0,targetY=0,targetX=0,zoom=17,targetZoom=17;
+let dragging=false,moved=0,lastX=0,lastY=0,selected=-1,hovered=-1;
+const canvas=renderer.domElement, raycaster=new THREE.Raycaster(), mouse=new THREE.Vector2();
+function updatePointer(event){
+  mouse.set(event.clientX/window.innerWidth*2-1,-(event.clientY/window.innerHeight)*2+1);
+}
+canvas.addEventListener("pointerdown",event=>{
+  dragging=true; moved=0; lastX=event.clientX; lastY=event.clientY;
+  canvas.setPointerCapture?.(event.pointerId);
+});
+window.addEventListener("pointermove",event=>{
+  updatePointer(event);
+  if(dragging){
+    moved+=Math.abs(event.clientX-lastX)+Math.abs(event.clientY-lastY);
+    targetY+=(event.clientX-lastX)*.006;
+    targetX=Math.max(-.6,Math.min(.6,targetX+(event.clientY-lastY)*.004));
+    lastX=event.clientX; lastY=event.clientY;
+  }
+});
+function endPointer(){
+  if(dragging && moved<6) pickNode();
+  dragging=false;
+}
+window.addEventListener("pointerup",endPointer);
+window.addEventListener("pointercancel",()=>{dragging=false;});
+canvas.addEventListener("wheel",event=>{
+  targetZoom=Math.max(9,Math.min(28,targetZoom+event.deltaY*.01));
+},{passive:true});
+
+function pickNode(){
+  raycaster.setFromCamera(mouse,camera);
+  const hit=raycaster.intersectObjects(nodes,false)[0];
+  if(hit) openStage(hit.object.userData.index);
+}
+
+function renderStagePanel(index){
+  const stage=S[index];
+  const completed=doneCount(stage), total=taskCount(stage);
+  let html=`<div class="k">Stage ${index+1} of ${S.length}</div>
+    <h2>${stage.n}</h2>
+    <p>${stage.g}</p>
+    <div class="stage-meta">
+      <span class="pill ${stage.status==="active"?"active":"future"}">${stage.status==="active"?"Current development stage":"Roadmap stage"}</span>
+      <span class="pill">${completed}/${total} verified tasks</span>
+    </div>
+    <p><span class="k" style="letter-spacing:.15em">Dependency:</span> ${stage.d}</p>
+    <div class="bar"><span id="stageProgress"></span></div>`;
+
+  if(index===ACTIVE_STAGE){
+    html+=`<div class="note"><strong>Evidence-driven tracker:</strong> Checkboxes are read-only. They are updated in the tracker when project work is completed and verified; clicking cannot change progress. <br><br><strong>Verified baseline:</strong> CORE_ARCHITECTURE.md was updated to v0.3 and committed as <strong>19fb863</strong>, then pushed to <strong>origin/main</strong>. The standalone Atlas is installed locally and its node interaction has been tested. These confirmed items are pre-marked in task 1.8. Other architecture deliverables remain unchecked until reviewed and evidenced. The three strategic pillars are Synthetic Market Architecture, Incentive Mechanisms and User Acquisition; they are not extra software stages.</div>`;
+  } else {
+    html+=`<div class="note">This is a planned roadmap stage. Its checklist describes intended engineering work; it is not evidence that implementation has started or that the stage is complete.</div>`;
+  }
+
+  stage.s.forEach(item=>{
+    html+=`<details><summary><b>${item[0]}</b><span>${item[1]}</span></summary>`;
+    item[2].forEach((task,k)=>{
+      const id=item[0]+"-"+k;
+      const checked=!!done[id];
+      html+=`<label class="t ${checked?"d":""}">
+        <input type="checkbox" data-task="${id}" ${checked?"checked":""} disabled aria-label="${checked?"Verified complete":"Not yet verified"}">
+        <span>${task}</span>
+      </label>`;
+    });
+    html+=`<div class="dv"><b>Expected deliverable</b> · ${item[3]}</div></details>`;
+  });
+  return html;
+}
+
+function openStage(index){
+  selected=index;
+  document.getElementById("pc").innerHTML=renderStagePanel(index);
+  document.getElementById("panel").classList.add("on");
+  updateStats();
+  const progress=document.getElementById("stageProgress");
+  if(progress) progress.style.width=(stageProgress(S[index])*100)+"%";
+}
+document.getElementById("x").addEventListener("click",()=>{
+  selected=-1; document.getElementById("panel").classList.remove("on");
+});
+window.addEventListener("keydown",event=>{
+  if(event.key==="Escape"){
+    selected=-1; document.getElementById("panel").classList.remove("on");
+  } else if(/^[1-8]$/.test(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey){
+    openStage(Number(event.key)-1);
+  }
+});
+
+function updateStats(){
+  const active=S[ACTIVE_STAGE], total=taskCount(active), completed=doneCount(active);
+  const allTotal=S.reduce((sum,stage)=>sum+taskCount(stage),0);
+  const allDone=S.reduce((sum,stage)=>sum+doneCount(stage),0);
+  document.getElementById("pct").textContent=Math.round(total?completed/total*100:0)+"%";
+  document.getElementById("cnt").textContent=completed+"/"+total;
+  document.getElementById("overallPct").textContent=Math.round(allTotal?allDone/allTotal*100:0)+"%";
+}
+updateStats();
+
+window.addEventListener("resize",()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+const clock=new THREE.Clock(), temp=new THREE.Vector3(), lookAt=new THREE.Vector3();
+(function animate(){
+  requestAnimationFrame(animate);
+  const time=clock.getElapsedTime();
+  if(!dragging && selected<0) targetY+=.0012;
+  rotY+=(targetY-rotY)*.06; rotX+=(targetX-rotX)*.06;
+  group.rotation.y=rotY; group.rotation.x=rotX;
+  zoom+=(targetZoom-zoom)*.06;
+  core.rotation.y=time*.22; core.rotation.x=time*.12;
+  coreShell.rotation.y=-time*.31; coreShell.rotation.x=time*.18;
+  coreInner.rotation.y=-time*.62; coreInner.rotation.x=time*.3;
+  coreTicks.rotation.z=-time*.12;
+  coreHalo.scale.setScalar(1+Math.sin(time*1.4)*.025);
+  rings.forEach((ring,i)=>{ring.rotation.z=time*(.12+i*.075);ring.rotation.x+=Math.sin(time*.15+i)*.0005;});
+  coreLight.intensity=3.8+Math.sin(time*1.7)*.75; rimLight.intensity=2+Math.sin(time*.8)*.35;
+  stars.rotation.y=time*.004; dust.rotation.y=-time*.008; dust.rotation.x=Math.sin(time*.12)*.025;
+  const pulseT=(time*.055)%1;
+  pulse.position.copy(curve.getPoint(pulseT));
+  pulseGlow.position.copy(pulse.position);
+  orbitParticles.forEach((particle,i)=>{
+    const t=(time*.035+i/orbitParticles.length)%1;
+    particle.position.copy(curve.getPoint(t));
+  });
+
+  raycaster.setFromCamera(mouse,camera);
+  const hit=raycaster.intersectObjects(nodes,false)[0];
+  hovered=hit?hit.object.userData.index:-1;
+  canvas.style.cursor=hovered>=0?"pointer":"grab";
+
+  nodes.forEach((node,index)=>{
+    const focused = index === hovered || index === selected;
+    const progress = stageProgress(S[index]);
+
+    // Gentle rotation and subtle focus response.
+    node.rotation.y = time * 0.12 + index * 0.08;
+
+    const scale = focused ? 1.16 : 1;
+    node.scale.lerp(temp.set(scale, scale, scale), 0.1);
+
+    node.material.emissiveIntensity = focused
+      ? 0.62
+      : (S[index].status === "active" ? 0.3 : 0.08) + progress * 0.22;
+
+    node.userData.progressRing.material.opacity =
+      progress > 0 ? 0.72 : 0;
+
+    node.userData.progressRing.lookAt(camera.position);
+    node.userData.progressRing.scale.setScalar(0.6 + progress * 0.6);
+    node.getWorldPosition(temp);
+    const projected=temp.clone().project(camera);
+    const label=node.userData.label;
+    label.style.transform=`translate(${(projected.x*.5+.5)*window.innerWidth+18}px,${(-projected.y*.5+.5)*window.innerHeight-14}px)`;
+    label.style.opacity=projected.z<1?(focused?1:.75):0;
+  });
+
+  const target=selected>=0?nodes[selected].getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,0,0);
+  lookAt.lerp(selected>=0?target.clone().add(new THREE.Vector3(2.8,0,0)):target,.05);
+  const cameraGoal=selected>=0
+    ?target.clone().add(new THREE.Vector3(0,.5,7))
+    :new THREE.Vector3(Math.sin(time*.2)*1.2,2+Math.sin(time*.3)*.5,zoom);
+  camera.position.lerp(cameraGoal,.04);
+  camera.lookAt(lookAt);
+  renderer.render(scene,camera);
+})();
+}, error => {
+  document.body.innerHTML = '<main style="max-width:680px;margin:12vh auto;padding:28px;color:#dce8f5;font:16px/1.6 Arial"><p style="color:#18a0ff;letter-spacing:.2em">AGONOMIA · DEVELOPMENT ATLAS</p><h1>3D library could not load</h1><p>The Atlas file is being served locally, but the browser could not download Three.js from its external sources. Check your internet connection or CDN access, then reload this page.</p></main>';
+});
+</script>
+</body>
+</html>
