@@ -154,7 +154,7 @@ summary b{color:var(--blue);font-size:10px;letter-spacing:.1em;padding-top:2px;m
 /* Load the same Three.js build from fallback CDNs if the first host is unavailable. */
 window.agonomiaThreeReady = new Promise((resolve, reject) => {
   const sources = [
-    "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
+    "./vendor/three.min.js",
     "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js",
     "https://unpkg.com/three@0.128.0/build/three.min.js"
   ];
